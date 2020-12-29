@@ -1,0 +1,96 @@
+ARG VERSION=latest
+FROM ubuntu:$VERSION
+
+MAINTAINER JAremko <w3techplaygound@gmail.com>
+
+# Fix "Couldn't register with accessibility bus" error message
+ENV NO_AT_BRIDGE=1
+
+ENV DEBIAN_FRONTEND noninteractive
+
+# basic stuff
+RUN echo 'APT::Get::Assume-Yes "true";' >> /etc/apt/apt.conf \
+    && apt-get update && apt-get install \
+    bash \
+    build-essential \
+    dbus-x11 \
+    fontconfig \
+    git \
+    gzip \
+    language-pack-en-base \
+    libgl1-mesa-glx \
+    make \
+    sudo \
+    tar \
+    unzip \
+    curl \
+    openssl \
+# su-exec
+    && git clone https://github.com/ncopa/su-exec.git /tmp/su-exec \
+    && cd /tmp/su-exec \
+    && make \
+    && chmod 770 su-exec \
+    && mv ./su-exec /usr/local/sbin/ \
+# Cleanup
+    && apt-get purge build-essential \
+    && apt-get autoremove \
+    && rm -rf /tmp/* /var/lib/apt/lists/* /root/.cache/*
+
+COPY asEnvUser /usr/local/sbin/
+
+# Only for sudoers
+RUN chown root /usr/local/sbin/asEnvUser \
+    && chmod 700  /usr/local/sbin/asEnvUser
+
+# ^^^^^^^ Those layers are shared ^^^^^^^
+
+# Emacs
+RUN apt-get update && apt-get install software-properties-common \
+    && apt-add-repository ppa:kelleyk/emacs \
+    && apt-get update && apt-get install emacs27 \
+# Cleanup
+    && apt-get purge software-properties-common \
+    && rm -rf /tmp/* /var/lib/apt/lists/* /root/.cache/*
+
+ENV UNAME="kashankar" \
+    GNAME="rnd" \
+    UHOME="/home/kashankar" \
+    UID="1976" \
+    GID="500" \
+    WORKSPACE="/home/kashankar" \
+    SHELL="/bin/bash" \
+    P4CLIENT="kashankar-hqna2" \
+    P4USER="kashankar" \
+    P4PORT="perforce:1666"
+
+WORKDIR "${WORKSPACE}"
+
+ENTRYPOINT ["asEnvUser"]
+
+ENV DEBIAN_FRONTEND noninteractive
+RUN curl -fsSL http://package.perforce.com/perforce.pubkey | apt-key add - 
+RUN echo 'deb http://package.perforce.com/apt/ubuntu precise release' > /etc/apt/sources.list.d/perforce.sources.list
+RUN apt-get update -yq && apt-get install -yqq --no-install-recommends helix-cli
+
+RUN mkdir -m 0755 -p /home/kashankar/.tmp
+ENV TMPDIR=/home/kashankar/.tmp
+## Enable ssh
+#RUN rm -f /etc/service/sshd/down
+#RUN /etc/my_init.d/00_regen_ssh_host_keys.sh
+
+#RUN mkdir -m 0755 -p /etc/myinit.d /etc/container_environment /etc/service/p4d /etc/service/p4swarm
+#ADD ./env.d/ /etc/container_environment
+#RUN gpasswd -a perforce docker_env
+
+#EXPOSE 22 80 443 1666 1667 8080
+#ENV P4NAME=p4depot P4ROOT=/data/p4depot P4SSLDIR=/data/p4depot/ssl P4PORT=ssl:1666 P4USER=perforce
+#VOLUME ["/data"]
+
+#ADD ./p4-users.txt /root/
+#ADD ./p4-groups.txt /root/
+#ADD ./p4-protect.txt /root/
+#ADD ./p4d.run  /etc/service/p4d/run
+#ADD ./p4d.init /etc/my_init.d/10-p4d.sh
+
+CMD ["bash", "-c", "emacs --fullscreen --fg-daemon=EmacsDaemon; ", "/sbin/my_init; ", "/bin/bash"]
+EXPOSE 4242
