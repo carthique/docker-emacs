@@ -52,6 +52,19 @@ RUN apt-get update && apt-get install software-properties-common \
     && apt-get purge software-properties-common \
     && rm -rf /tmp/* /var/lib/apt/lists/* /root/.cache/*
 
+
+ENV NOTVISIBLE "in users profile"
+RUN echo "export VISIBLE=now" >> /etc/profile
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends openssh-server tmux \
+    emacs-goodies.el curl git \
+    python3 python3-pip python3-virtualenv python3-dev build-essential
+
+# From https://pythonspeed.com/articles/activate-virtualenv-dockerfile/
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m virtualenv --python=/usr/bin/python3 $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+ENV TERM=xterm-256color
 ENV UNAME="kashankar" \
     GNAME="rnd" \
     UHOME="/home/kashankar" \
@@ -62,6 +75,14 @@ ENV UNAME="kashankar" \
     P4CLIENT="kashankar-hqna2" \
     P4USER="kashankar" \
     P4PORT="perforce:1666"
+
+RUN pip3 install -U setuptools
+RUN pip3 install -U pylint
+RUN pip3 install -U flake8
+RUN pip3 install -U autopep8
+RUN pip3 install -U pep8
+RUN pip3 install -U rope
+RUN pip3 install -U jedi
 
 WORKDIR "${WORKSPACE}"
 
