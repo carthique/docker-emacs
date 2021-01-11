@@ -93,8 +93,9 @@ RUN curl -fsSL http://package.perforce.com/perforce.pubkey | apt-key add -
 RUN echo 'deb http://package.perforce.com/apt/ubuntu precise release' > /etc/apt/sources.list.d/perforce.sources.list
 RUN apt-get update -yq && apt-get install -yqq --no-install-recommends helix-cli
 
-RUN mkdir -m 0755 -p /home/kashankar/.tmp
-ENV TMPDIR=/home/kashankar/.tmp
+#RUN mkdir -m 0755 -p /home/kashankar/.tmp
+#ENV TMPDIR=/home/kashankar/.tmp
+ENV TMPDIR=/tmp
 ## Enable ssh
 #RUN rm -f /etc/service/sshd/down
 #RUN /etc/my_init.d/00_regen_ssh_host_keys.sh
